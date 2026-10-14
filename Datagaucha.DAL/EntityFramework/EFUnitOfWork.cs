@@ -1,11 +1,16 @@
+/* Copyright (c) 2026 David-irusta
+    This code is licensed under the MIT License (see LICENSE file for details) */
+
 using Datagaucha.DAL.EntityFramework.Auth;
 using Datagaucha.DAL.EntityFramework.FileSystem;
 using Datagaucha.DAL.EntityFramework.Post;
+using Datagaucha.DAL.EntityFramework.Security;
 using Datagaucha.DAL.EntityFramework.Social;
 using Datagaucha.DAL.interfaces;
 using Datagaucha.DAL.interfaces.Auth;
 using Datagaucha.DAL.interfaces.FileSystem;
 using Datagaucha.DAL.interfaces.Post;
+using Datagaucha.DAL.interfaces.Security;
 using Datagaucha.DAL.interfaces.Social;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +31,20 @@ public class EFUnitOfWork(DatagauchaDbContext context) : IUnitOfWork
                 this.userRepository = new EFUserRepository(_context);
             }
             return this.userRepository;
+        }
+    }
+
+    private IPersonRepository? personRepository;
+
+    public IPersonRepository PersonRepository
+    {
+        get
+        {
+            if (this.personRepository is null)
+            {
+                this.personRepository = new EFPersonRepository(_context);
+            }
+            return this.personRepository;
         }
     }
 
@@ -71,6 +90,20 @@ public class EFUnitOfWork(DatagauchaDbContext context) : IUnitOfWork
         }
     }
 
+    private ICommentRepository? commentRepository;
+
+    public ICommentRepository CommentRepository
+    {
+        get
+        {
+            if (this.commentRepository is null)
+            {
+                this.commentRepository = new EFCommentRepository(_context);
+            }
+            return this.commentRepository;
+        }
+    }
+
     private IFollowRepository? followRepository;
 
     public IFollowRepository FollowRepository    {
@@ -81,6 +114,20 @@ public class EFUnitOfWork(DatagauchaDbContext context) : IUnitOfWork
                 this.followRepository = new EFFollowRepository(_context);
             }
             return this.followRepository;
+        }
+    }
+
+    private IBanRepository? banRepository;
+
+    public IBanRepository BanRepository
+    {
+        get
+        {
+            if (this.banRepository is null)
+            {
+                this.banRepository = new EFBanRepository(_context);
+            }
+            return this.banRepository;
         }
     }
 

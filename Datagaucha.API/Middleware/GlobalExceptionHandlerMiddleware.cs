@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 David-irusta
+    This code is licensed under the MIT License (see LICENSE file for details) */
+
 using System.Net;
 using System.Text.Json;
 using Datagaucha.Domain.Exceptions;
@@ -16,6 +19,19 @@ public class GlobalExceptionHandlerMiddleware(
         try
         {
             await _next(context);
+        }
+        catch (ValidationException exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Validation error: {Message}",
+                exception.Message);
+
+            await WriteErrorResponse(
+                context,
+                HttpStatusCode.BadRequest,
+                "Bad request",
+                exception.Message);
         }
         catch (System.ComponentModel.DataAnnotations.ValidationException exception)
         {
@@ -80,6 +96,19 @@ public class GlobalExceptionHandlerMiddleware(
                 context,
                 HttpStatusCode.Conflict,
                 "Conflict",
+                exception.Message);
+        }
+        catch (BusinessForbiddenException exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Business forbidden: {Message}",
+                exception.Message);
+
+            await WriteErrorResponse(
+                context,
+                HttpStatusCode.Forbidden,
+                "Forbidden",
                 exception.Message);
         }
         catch (BusinessException exception)

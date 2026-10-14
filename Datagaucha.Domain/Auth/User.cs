@@ -1,15 +1,14 @@
+/* Copyright (c) 2026 David-irusta
+    This code is licensed under the MIT License (see LICENSE file for details) */
+
 using Datagaucha.Domain.FileSystem;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace Datagaucha.Domain.Auth;
 
-public class User
+public class User : Person
 {
-    private long id;
-
-    public long Id { get => id; set => id = value; }
-
     private string userName = "";
 
     public string UserName { get => userName; set => userName = value; }
@@ -17,6 +16,10 @@ public class User
     private string password = "";
 
     public string Password { get => password; set => password = value; }
+
+    private DateTime? dateBirth = null;
+
+    public DateTime? DateBirth { get => dateBirth; set => dateBirth = value; }
 
     private Image? image = null;
 
@@ -50,7 +53,7 @@ public class User
     {
         if (this.Image != null)
         {
-            return "image/" + this.Image.Id;
+            return "api/images/" + this.Image.FileName;
         }
 
         return null;

@@ -1,17 +1,21 @@
+/* Copyright (c) 2026 David-irusta
+    This code is licensed under the MIT License (see LICENSE file for details) */
+
 namespace Datagaucha.DAL.EntityFramework.Post;
 
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Datagaucha.DAL.interfaces.Post;
 using Datagaucha.Domain.Auth;
-using Datagaucha.Domain.Post;
 using Microsoft.EntityFrameworkCore;
 
 public class EFPostRepository(DatagauchaDbContext dbContext) : IPostRepository
 {
+    private const string OrderByCreatedAt = "CREATEDAT";
+    private const string OrderByBody = "BODY";
+    private const string Ascending = "ASC";
+
     private readonly DatagauchaDbContext dbContext = dbContext;
 
-    public async Task<List<Post>>GetPosts(
+    public async Task<List<Domain.Post.Post>> GetPosts(
         User user,
         int currentPage,
         int pageSize,
@@ -19,66 +23,69 @@ public class EFPostRepository(DatagauchaDbContext dbContext) : IPostRepository
         string orderDirection,
         string? search)
     {
-        //Listado de Id's de gente que yo sigo
         IQueryable<long> followedUserIds = dbContext.Follows
-            .Where(follow => follow.Following.Id == user.Id)
-            .Select(follow => follow.Follower.Id);
+            .Where(follow => follow.Follower != null && follow.Follower.Id == user.Id)
+            .Select(follow => follow.Following!.Id);
 
         IQueryable<Datagaucha.Domain.Post.Post> posts = dbContext.Posts
-            .Where(post => post.User.Id == user.Id || followedUserIds.Contains(post.User.Id));
+            .Where(post => post.User != null
+                && (post.User.Id == user.Id || followedUserIds.Contains(post.User.Id)));
 
         if (!String.IsNullOrEmpty(search))
         {
             posts = posts.Where(post => post.Body.Contains(search));
         }
 
-        AddOrder(ref orderBy, ref orderDirection, posts);
-        posts = posts
-                .Skip((currentPage - 1) * pageSize)
-                .Take(pageSize);
+        IQueryable<Datagaucha.Domain.Post.Post> orderedPosts = AddOrder(posts, orderBy, orderDirection);
 
-        return await posts.ToListAsync();
+        List<Datagaucha.Domain.Post.Post> result = await orderedPosts
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+        return result;
     }
 
-    private static void AddOrder(ref string orderBy, ref string orderDirection, IQueryable<Post> posts)
+    public async Task<Domain.Post.Post?> GetPostById(long postId)
     {
-        if (String.IsNullOrEmpty(orderBy)) orderBy = "CREATEDAT";
-        if (String.IsNullOrEmpty(orderDirection)) orderDirection = "DESC";
+        return await this.dbContext.Posts.FindAsync(postId);
+    }
 
-        if (orderBy.ToUpper().Equals("CREATEDAT"))
+    public async Task<bool> Create(Domain.Post.Post post)
+    {
+        await this.dbContext.Posts.AddAsync(post);
+        return true;
+    }
+
+    public Task<bool> Delete(Domain.Post.Post post)
+    {
+        this.dbContext.Posts.Remove(post);
+        return Task.FromResult(true);
+    }
+
+    private static IQueryable<Domain.Post.Post> AddOrder(
+        IQueryable<Domain.Post.Post> posts,
+        string orderBy,
+        string orderDirection)
+    {
+        string order = String.IsNullOrEmpty(orderBy) ? OrderByCreatedAt : orderBy.ToUpper();
+        string direction = String.IsNullOrEmpty(orderDirection) ? "DESC" : orderDirection.ToUpper();
+
+        IQueryable<Domain.Post.Post> orderedPosts;
+
+        if (order.Equals(OrderByBody))
         {
-            if (orderDirection.ToUpper().Equals("ASC"))
-            {
-                posts.OrderBy(post => post.Id);
-            }
-            else
-            {
-                posts.OrderByDescending(post => post.Id);
-            }
-        }
-        else if (orderBy.ToUpper().Equals("BODY"))
-        {
-            if (orderDirection.ToUpper().Equals("ASC"))
-            {
-                posts.OrderBy(post => post.Body);
-            }
-            else
-            {
-                posts.OrderByDescending(post => post.Body);
-            }
+            orderedPosts = direction.Equals(Ascending)
+                ? posts.OrderBy(post => post.Body)
+                : posts.OrderByDescending(post => post.Body);
         }
         else
         {
-            if (orderDirection.ToUpper().Equals("ASC"))
-            {
-                posts.OrderBy(post => post.Id);
-            }
-            else
-            {
-                posts.OrderByDescending(post => post.Id);
-            }
+            orderedPosts = direction.Equals(Ascending)
+                ? posts.OrderBy(post => post.Id)
+                : posts.OrderByDescending(post => post.Id);
         }
-    }
 
-    public Task<List<Post>> GetPosts(User user, object currentPage, object pageSize, object orderBy, object orderDirection, object search) => throw new NotImplementedException();
+        return orderedPosts;
+    }
 }

@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 David-irusta
+    This code is licensed under the MIT License (see LICENSE file for details) */
+
 using Microsoft.AspNetCore.Mvc;
 using Datagaucha.DAL.interfaces;
 using Datagaucha.Domain.Exceptions;
@@ -26,8 +29,6 @@ public class ImagesController : ControllerBase
         {
             throw new BusinessNotFoundException("La imagen no existe en la base de datos");
         }
-
-        string? quesoy = file.ImageUrl();
 
 		FileStorageService fileStorage = new FileStorageService(this.env);
         var physicalPath = fileStorage.GetPhysicalPath(file.StoragePath);

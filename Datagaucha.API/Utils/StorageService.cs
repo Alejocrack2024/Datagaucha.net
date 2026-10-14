@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 David-irusta
+    This code is licensed under the MIT License (see LICENSE file for details) */
+
 using Datagaucha.Domain.FileSystem;
 using ImageMagick;
 using Microsoft.AspNetCore.Hosting;
@@ -15,7 +18,16 @@ public class FileStorageService
         _storagePath = Path.Combine(_env.ContentRootPath, _relativeStoragePath);
     }
 
-    public async Task<Image> SaveImageAsync(byte[] data, string fileName)
+    public async Task<Image> SaveImageAsync(IFormFile file)
+    {
+        await using Stream stream = file.OpenReadStream();
+        using MemoryStream memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+
+        return await SaveImageAsync(memoryStream.ToArray(), file.FileName);
+    }
+
+    public Task<Image> SaveImageAsync(byte[] data, string fileName)
     {
         Directory.CreateDirectory(_storagePath);
 
@@ -29,16 +41,14 @@ public class FileStorageService
         image.Format = MagickFormat.WebP;
         image.Write(physicalPath);
 
-        var size = new FileInfo(physicalPath).Length;
-
-        return new Image
+        return Task.FromResult(new Image
         {
             FileName = finalFileName,
             ContentType = "image/webp",
             StoragePath = relativeStoragePath,
             Width = (int)image.Width,
             Height = (int)image.Height
-        };
+        });
     }
 
     public string GetPhysicalPath(string storagePath)

@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 David-irusta
+    This code is licensed under the MIT License (see LICENSE file for details) */
+
 namespace Datagaucha.Domain.FileSystem;
 
 public class Image : File
@@ -12,6 +15,6 @@ public class Image : File
 
     public override string? ImageUrl()
     {
-        return "/image" + this.FileName;
+        return "api/images/" + this.FileName;
     }
 }

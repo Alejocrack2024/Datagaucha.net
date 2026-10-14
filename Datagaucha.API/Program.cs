@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 David-irusta
+    This code is licensed under the MIT License (see LICENSE file for details) */
+
 using System.Text;
 using Datagaucha.API.Middleware;
 using Datagaucha.DAL.EntityFramework;
@@ -87,13 +90,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-
-//Inyeccion de dependencia
 builder.Services.AddScoped<Datagaucha.DAL.interfaces.IUnitOfWork,
     Datagaucha.DAL.EntityFramework.EFUnitOfWork>();
 
 builder.Services.AddScoped<JwtTokenGenerator>();
-//
 
 var app = builder.Build();
 

@@ -1,14 +1,13 @@
-using System.ComponentModel.DataAnnotations;
+/* Copyright (c) 2026 David-irusta
+    This code is licensed under the MIT License (see LICENSE file for details) */
+
 using Datagaucha.DAL.interfaces;
 using Datagaucha.Domain.Auth;
-using Microsoft.AspNetCore.Mvc;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
-using static System.Net.WebRequestMethods;
-using System.Net;
+using Datagaucha.Domain.Exceptions;
 using Datagaucha.Domain.FileSystem;
-using Microsoft.AspNetCore.Identity.Data;
-using System.Security.Authentication;
-using Microsoft.IdentityModel.Tokens;
+using Datagaucha.Domain.Security;
+using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace Datagaucha.API.Controllers.Auth;
 
@@ -36,11 +35,6 @@ public class UserController : ControllerBase{
 
         Image? image = await generateImage(request);
 
-        //Agregar validacion usando regex para:
-        //8 caracteres, 1 mayus, 1 minus y 1 numero
-
-        //Si llegue aca. Es que esta todo Ok
-
         User user = createUser(request, image);
 
         await saveInDataBase(user);
@@ -48,6 +42,7 @@ public class UserController : ControllerBase{
         CreateUserResponse response = new CreateUserResponse
         {
             id = user.Id,
+            name = user.Name,
             avatarUrl = user.GetAvatarurl(),
             userName = user.UserName
         };
@@ -71,7 +66,9 @@ public class UserController : ControllerBase{
     {
         User user = new User
         {
+            Name = request.name,
             UserName = request.userName,
+            DateBirth = request.dateBirth,
             Image = image
         };
 
@@ -81,22 +78,19 @@ public class UserController : ControllerBase{
 
     private async Task<Image?> generateImage(CreateUserRequest request)
     {
-
         if (request.file is null) return null;
 
-        await using var stream = request.file.OpenReadStream();
-        using var ms = new MemoryStream();
-        await stream.CopyToAsync(ms);
-        byte[]? fileData = ms.ToArray();
-        string? fileName = request.file.FileName;
-
         FileStorageService fileStorageService = new FileStorageService(env);
-        return await fileStorageService.SaveImageAsync(fileData, fileName);
-
+        return await fileStorageService.SaveImageAsync(request.file);
     }
 
     private async Task validationUser(CreateUserRequest request)
     {
+        if (String.IsNullOrEmpty(request.name))
+        {
+            throw new ValidationException("El nombre de la persona es un dato obligatorio");
+        }
+
         if (String.IsNullOrEmpty(request.password))
         {
             throw new ValidationException("La contraseña es un dato obligatorio");
@@ -117,7 +111,7 @@ public class UserController : ControllerBase{
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        User? user = await validationLogin(request);
+        User user = await validationLogin(request);
 
         string token = this.generator.GenerateToken(user.Id);
 
@@ -138,28 +132,42 @@ public class UserController : ControllerBase{
         });
     }
 
-    private async Task<User?> validationLogin(LoginRequest request)
+    private async Task<User> validationLogin(LoginRequest request)
     {
-        if (String.IsNullOrEmpty(request.UserName))
+        string userName = request.UserName ?? string.Empty;
+
+        if (String.IsNullOrEmpty(userName))
         {
-            throw new InvalidCredentialException("Nombre de usuario es un dato obligatorio");
+            throw new InvalidCredentialsException("Nombre de usuario es un dato obligatorio");
         }
 
         if (String.IsNullOrEmpty(request.Password))
         {
-            throw new InvalidCredentialException("La clave es un dato obligatorio");
+            throw new InvalidCredentialsException("La clave es un dato obligatorio");
         }
 
-        User? user = await this.dataBase.UserRepository.GetuserByUserName(request.UserName);
+        User? user = await this.dataBase.UserRepository.GetuserByUserName(userName);
         if (user == null)
         {
-            throw new InvalidCredentialException("Nombre de usuario o contraseña incorrectos");
+            throw new InvalidCredentialsException("Nombre de usuario o contraseña incorrectos");
         }
         if (!user.IsPassword(request.Password))
         {
-            throw new InvalidCredentialException("Nombre de usuario o contraseña incorrectos");
+            throw new InvalidCredentialsException("Nombre de usuario o contraseña incorrectos");
         }
 
+        await validationBan(user);
+
         return user;
+    }
+
+    private async Task validationBan(User user)
+    {
+        Ban? ban = await this.dataBase.BanRepository.GetBanByUserId(user.Id);
+
+        if (ban != null)
+        {
+            throw new BusinessForbiddenException("Tu cuenta esta baneada: " + ban.Reason);
+        }
     }
 }

@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 David-irusta
+    This code is licensed under the MIT License (see LICENSE file for details) */
+
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
@@ -25,19 +28,6 @@ public class JwtTokenGenerator
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-			/*
-			sub			JwtRegisteredClaimNames.Sub			Identificador único del usuario
-			email		JwtRegisteredClaimNames.Email		Email del usuario
-			name		JwtRegisteredClaimNames.Name		Nombre del usuario
-			given_name	JwtRegisteredClaimNames.GivenName	Nombre de pila
-			family_name	JwtRegisteredClaimNames.FamilyName	Apellido
-			jti			JwtRegisteredClaimNames.Jti			ID único del token
-			iat			JwtRegisteredClaimNames.Iat			Fecha/hora de emisión
-			exp			JwtRegisteredClaimNames.Exp			Fecha/hora de expiración
-			iss			JwtRegisteredClaimNames.Iss			Emisor del token
-			aud			JwtRegisteredClaimNames.Aud			Audiencia
-			nbf			JwtRegisteredClaimNames.Nbf			No válido antes de esta fecha
-			*/
         };
 
         var descriptor = new SecurityTokenDescriptor

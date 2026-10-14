@@ -1,3 +1,6 @@
+/* Copyright (c) 2026 David-irusta
+    This code is licensed under the MIT License (see LICENSE file for details) */
+
 using Microsoft.AspNetCore.Mvc;
 using Datagaucha.DAL.interfaces;
 using Datagaucha.Domain.Exceptions;
@@ -6,8 +9,6 @@ using Microsoft.AspNetCore.Authorization;
 using Datagaucha.API.Utils;
 using Datagaucha.Domain.Post;
 using Datagaucha.Domain.Auth;
-using static System.Net.WebRequestMethods;
-using System.Collections.Generic;
 using Datagaucha.API.DTOs.Post;
 using System.Net;
 
@@ -15,17 +16,16 @@ namespace Datagaucha.API.Controllers;
 
 [ApiController]
 [Route("api/post")]
-public class PostController(IUnitOfWork unitOfWork) : ControllerBase
+public class PostController(IUnitOfWork unitOfWork, IWebHostEnvironment env) : ControllerBase
 {
     private readonly IUnitOfWork dataBase = unitOfWork;
+    private readonly IWebHostEnvironment env = env;
 
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> GetPost([FromQuery]GetPostRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPost([FromQuery]GetPostRequest request)
     {
-        var userId = User.GetUserId();
-
-        User user = await this.dataBase.UserRepository.GetuserById(userId);
+        User user = await getAuthenticatedUser();
 
         List<Post> posts = await this.dataBase.PostRepository.GetPosts(
             user,
@@ -38,13 +38,7 @@ public class PostController(IUnitOfWork unitOfWork) : ControllerBase
         List<PostDTO> postDTOs = new List<PostDTO>();
         foreach (Post post in posts)
         {
-            postDTOs.Add(new PostDTO
-            {
-                id = post.Id,
-                userName = post.GetUserName(),
-                content = post.Body,
-                urlImage = post.ImageUrl()
-            });
+            postDTOs.Add(buildDTO(post));
         }
         return Ok(new ResponseDTO<List<PostDTO>>(){
             code = (int)HttpStatusCode.OK,
@@ -52,5 +46,119 @@ public class PostController(IUnitOfWork unitOfWork) : ControllerBase
             payload = postDTOs,
             success = true
         });
+    }
+
+    [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> Create([FromForm] CreatePostRequest request)
+    {
+        User user = await getAuthenticatedUser();
+        validationTitle(request.title);
+        validationBody(request.body);
+
+        Image? image = await generateImage(request);
+
+        Post post = new Post
+        {
+            Title = request.title.Trim(),
+            Body = request.body.Trim(),
+            User = user,
+            File = image
+        };
+
+        await this.dataBase.PostRepository.Create(post);
+        await this.dataBase.SaveChangesAsync();
+
+        return Ok(new ResponseDTO<PostDTO>
+        {
+            code = (int)HttpStatusCode.OK,
+            message = "Post creado correctamente",
+            payload = buildDTO(post),
+            success = true
+        });
+    }
+
+    [Authorize]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(long id)
+    {
+        User user = await getAuthenticatedUser();
+
+        Post? post = await this.dataBase.PostRepository.GetPostById(id);
+
+        if (post is null)
+        {
+            throw new BusinessNotFoundException("El post no existe");
+        }
+
+        validationAuthor(post, user);
+
+        await this.dataBase.PostRepository.Delete(post);
+        await this.dataBase.SaveChangesAsync();
+
+        return Ok(new ResponseDTO<PostDTO>
+        {
+            code = (int)HttpStatusCode.OK,
+            message = "Post eliminado correctamente",
+            payload = null,
+            success = true
+        });
+    }
+
+    private static void validationTitle(string title)
+    {
+        if (String.IsNullOrWhiteSpace(title))
+        {
+            throw new ValidationException("El titulo del post es un dato obligatorio");
+        }
+    }
+
+    private static void validationBody(string body)
+    {
+        if (String.IsNullOrWhiteSpace(body))
+        {
+            throw new ValidationException("El texto del post es un dato obligatorio");
+        }
+    }
+
+    private static void validationAuthor(Post post, User user)
+    {
+        if (post.User is null || post.User.Id != user.Id)
+        {
+            throw new BusinessForbiddenException("Solo el autor puede eliminar su post");
+        }
+    }
+
+    private async Task<User> getAuthenticatedUser()
+    {
+        long userId = User.GetUserId();
+        User? user = await this.dataBase.UserRepository.GetuserById(userId);
+
+        if (user is null)
+        {
+            throw new BusinessNotFoundException("El usuario autenticado no existe");
+        }
+
+        return user;
+    }
+
+    private async Task<Image?> generateImage(CreatePostRequest request)
+    {
+        if (request.file is null) return null;
+
+        FileStorageService fileStorageService = new FileStorageService(this.env);
+        return await fileStorageService.SaveImageAsync(request.file);
+    }
+
+    private static PostDTO buildDTO(Post post)
+    {
+        return new PostDTO
+        {
+            id = post.Id,
+            title = post.Title,
+            userName = post.GetUserName(),
+            content = post.Body,
+            urlImage = post.ImageUrl()
+        };
     }
 }

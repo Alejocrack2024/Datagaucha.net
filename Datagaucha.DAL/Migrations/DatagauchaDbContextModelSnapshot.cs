@@ -25,7 +25,7 @@ namespace Datagaucha.DAL.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("Datagaucha.Domain.Auth.User", b =>
+            modelBuilder.Entity("Datagaucha.Domain.Auth.Person", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -33,22 +33,22 @@ namespace Datagaucha.DAL.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<long?>("ImageId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Password")
+                    b.Property<string>("Discriminator")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(8)
+                        .HasColumnType("varchar(8)");
 
-                    b.Property<string>("UserName")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ImageId");
+                    b.ToTable("Users", (string)null);
 
-                    b.ToTable("Users");
+                    b.HasDiscriminator().HasValue("Person");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Datagaucha.Domain.FileSystem.File", b =>
@@ -85,6 +85,36 @@ namespace Datagaucha.DAL.Migrations
                     b.UseTphMappingStrategy();
                 });
 
+            modelBuilder.Entity("Datagaucha.Domain.Post.Comment", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long?>("PostId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Comments");
+                });
+
             modelBuilder.Entity("Datagaucha.Domain.Post.Post", b =>
                 {
                     b.Property<long>("Id")
@@ -100,6 +130,10 @@ namespace Datagaucha.DAL.Migrations
                     b.Property<long?>("FileId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<long?>("UserId")
                         .HasColumnType("bigint");
 
@@ -110,6 +144,36 @@ namespace Datagaucha.DAL.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Posts");
+                });
+
+            modelBuilder.Entity("Datagaucha.Domain.Security.Ban", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("BannedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long?>("PersonId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Bans");
                 });
 
             modelBuilder.Entity("Datagaucha.Domain.Social.Follow", b =>
@@ -135,6 +199,29 @@ namespace Datagaucha.DAL.Migrations
                     b.ToTable("Follows");
                 });
 
+            modelBuilder.Entity("Datagaucha.Domain.Auth.User", b =>
+                {
+                    b.HasBaseType("Datagaucha.Domain.Auth.Person");
+
+                    b.Property<DateTime?>("DateBirth")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long?>("ImageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasIndex("ImageId");
+
+                    b.HasDiscriminator().HasValue("User");
+                });
+
             modelBuilder.Entity("Datagaucha.Domain.FileSystem.Image", b =>
                 {
                     b.HasBaseType("Datagaucha.Domain.FileSystem.File");
@@ -148,13 +235,20 @@ namespace Datagaucha.DAL.Migrations
                     b.HasDiscriminator().HasValue("Image");
                 });
 
-            modelBuilder.Entity("Datagaucha.Domain.Auth.User", b =>
+            modelBuilder.Entity("Datagaucha.Domain.Post.Comment", b =>
                 {
-                    b.HasOne("Datagaucha.Domain.FileSystem.Image", "Image")
-                        .WithMany()
-                        .HasForeignKey("ImageId");
+                    b.HasOne("Datagaucha.Domain.Post.Post", "Post")
+                        .WithMany("Comments")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("Image");
+                    b.HasOne("Datagaucha.Domain.Auth.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Datagaucha.Domain.Post.Post", b =>
@@ -172,6 +266,21 @@ namespace Datagaucha.DAL.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Datagaucha.Domain.Security.Ban", b =>
+                {
+                    b.HasOne("Datagaucha.Domain.Auth.Person", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId");
+
+                    b.HasOne("Datagaucha.Domain.Auth.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Person");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Datagaucha.Domain.Social.Follow", b =>
                 {
                     b.HasOne("Datagaucha.Domain.Auth.User", "Follower")
@@ -185,6 +294,20 @@ namespace Datagaucha.DAL.Migrations
                     b.Navigation("Follower");
 
                     b.Navigation("Following");
+                });
+
+            modelBuilder.Entity("Datagaucha.Domain.Auth.User", b =>
+                {
+                    b.HasOne("Datagaucha.Domain.FileSystem.Image", "Image")
+                        .WithMany()
+                        .HasForeignKey("ImageId");
+
+                    b.Navigation("Image");
+                });
+
+            modelBuilder.Entity("Datagaucha.Domain.Post.Post", b =>
+                {
+                    b.Navigation("Comments");
                 });
 #pragma warning restore 612, 618
         }
