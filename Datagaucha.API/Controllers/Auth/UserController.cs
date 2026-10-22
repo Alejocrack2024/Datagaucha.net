@@ -87,6 +87,13 @@ public class UserController : ControllerBase{
 
     private async Task validationUser(CreateUserRequest request)
     {
+        if (request.dateBirth > DateTime.Today.AddYears(-18))
+        {
+            throw new ValidationException(
+                "Debes ser mayor de 18 años para registrarte."
+            );
+        }
+
         if (String.IsNullOrEmpty(request.name))
         {
             throw new ValidationException("El nombre de la persona es un dato obligatorio");
