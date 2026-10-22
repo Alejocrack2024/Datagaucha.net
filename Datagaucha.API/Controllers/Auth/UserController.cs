@@ -73,6 +73,7 @@ public class UserController : ControllerBase{
         };
 
         user.SetPassword(request.password);
+
         return user;
     }
 
@@ -91,9 +92,12 @@ public class UserController : ControllerBase{
             throw new ValidationException("El nombre de la persona es un dato obligatorio");
         }
 
-        if (String.IsNullOrEmpty(request.password))
+        if (!PasswordValidator.IsValid(request.password))
         {
-            throw new ValidationException("La contraseña es un dato obligatorio");
+            throw new ValidationException(
+                "La contraseña debe tener entre 12 y 128 caracteres, " +
+                "una mayúscula, una minúscula, un número y un carácter especial."
+            );
         }
 
         if (String.IsNullOrEmpty(request.userName))
