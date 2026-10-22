@@ -21,10 +21,10 @@ public class ImagesController : ControllerBase
         this.env = env;
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetImage(string id, CancellationToken cancellationToken)
+    [HttpGet("{FileName}")]
+    public async Task<IActionResult> GetImage(string FileName, CancellationToken cancellationToken)
     {
-        Datagaucha.Domain.FileSystem.File? file = await this.dataBase.FileRepository.GetByName(id);
+        Datagaucha.Domain.FileSystem.File? file = await this.dataBase.FileRepository.GetByName(FileName);
         if (file is null)
         {
             throw new BusinessNotFoundException("La imagen no existe en la base de datos");

@@ -25,9 +25,9 @@ public class EFFileRepository : IFileRepository
 
     public async Task<Domain.FileSystem.File?> GetByName(string name)
     {
-        List<Datagaucha.Domain.FileSystem.File> files = await this.dbContext.Files.Where(file => file.FileName.Trim().ToUpper(System.Globalization.CultureInfo.CurrentCulture).Equals(name.Trim().ToUpper())).ToListAsync();
-        if (files?.Count > 0) return files[0];
+        string fileName = name.Trim();
 
-        return null;
+        return await this.dbContext.Files
+            .FirstOrDefaultAsync(file => file.FileName == fileName);
     }
 }
