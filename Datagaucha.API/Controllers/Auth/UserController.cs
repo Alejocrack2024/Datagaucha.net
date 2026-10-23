@@ -7,6 +7,8 @@ using Datagaucha.Domain.Exceptions;
 using Datagaucha.Domain.FileSystem;
 using Datagaucha.Domain.Security;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using System.Net;
 
 namespace Datagaucha.API.Controllers.Auth;
@@ -118,6 +120,118 @@ public class UserController : ControllerBase{
         {
             throw new ValidationException("Ya existe un usuario con el nombre " + request.userName);
         }
+    }
+
+    [Authorize]
+    [HttpPut("profile")]
+    public async Task<IActionResult> UpdateProfile(
+        [FromForm] UpdateProfileRequest request)
+    {
+        string? userIdClaim =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value;
+
+        if (!long.TryParse(userIdClaim, out long userId))
+        {
+            throw new InvalidCredentialsException(
+                "No se pudo identificar al usuario autenticado."
+            );
+        }
+
+        User? user = await dataBase.UserRepository.GetuserById(userId);
+
+        if (user == null)
+        {
+            throw new BusinessNotFoundException("El usuario no existe.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.password))
+        {
+            if (!PasswordValidator.IsValid(request.password))
+            {
+                throw new ValidationException(
+                    "La contraseña debe tener entre 12 y 128 caracteres, " +
+                    "una mayúscula, una minúscula, un número y un carácter especial."
+                );
+            }
+
+            user.SetPassword(request.password);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.name))
+        {
+            throw new ValidationException(
+                "El nombre completo es un dato obligatorio."
+            );
+        }
+
+        if (string.IsNullOrWhiteSpace(request.userName))
+        {
+            throw new ValidationException(
+                "El nombre de usuario es un dato obligatorio."
+            );
+        }
+
+        if (request.dateBirth.HasValue)
+        {
+            if (request.dateBirth.Value.Date >
+                DateTime.Today.AddYears(-18))
+            {
+                throw new ValidationException(
+                    "Debes tener al menos 18 años."
+                );
+            }
+        }
+
+        string newUserName = request.userName.Trim();
+
+        User? existingUser =
+            await dataBase.UserRepository.GetuserByUserName(newUserName);
+
+        if (existingUser != null && existingUser.Id != user.Id)
+        {
+            throw new ValidationException(
+                "Ya existe un usuario con el nombre " + newUserName
+            );
+        }
+
+        user.Name = request.name.Trim();
+        user.UserName = newUserName;
+        
+        if (request.dateBirth.HasValue)
+        {
+            user.DateBirth = request.dateBirth.Value;
+        }
+
+        if (request.file != null && request.file.Length > 0)
+        {
+            FileStorageService storageService =
+                new FileStorageService(env);
+
+            Image newImage =
+                await storageService.SaveImageAsync(request.file);
+
+            user.Image = newImage;
+        }
+
+        await dataBase.SaveChangesAsync();
+
+        UpdateProfileResponse response = new UpdateProfileResponse
+        {
+            id = user.Id,
+            name = user.Name,
+            userName = user.UserName,
+            dateBirth = user.DateBirth,
+            avatarUrl = user.GetAvatarurl()
+        };
+
+        return Ok(new ResponseDTO<UpdateProfileResponse>
+        {
+            code = (int)HttpStatusCode.OK,
+            message = "Perfil actualizado correctamente",
+            success = true,
+            payload = response
+        });
     }
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)

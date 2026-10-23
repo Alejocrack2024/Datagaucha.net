@@ -18,7 +18,9 @@ public class EFUserRepository(DatagauchaDbContext dbContext) : IUserRepository
 
     public async Task<User?> GetuserById(long userId)
     {
-        return await this.dbContext.Users.FindAsync(userId);
+        return await this.dbContext.Users
+            .Include(u => u.Image)
+            .FirstOrDefaultAsync(u => u.Id == userId);
     }
 
     public Task<User?> GetuserByUserName(string userName)
