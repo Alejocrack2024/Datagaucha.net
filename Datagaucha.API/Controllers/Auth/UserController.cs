@@ -89,12 +89,7 @@ public class UserController : ControllerBase{
 
     private async Task validationUser(CreateUserRequest request)
     {
-        if (request.dateBirth > DateTime.Today.AddYears(-18))
-        {
-            throw new ValidationException(
-                "Debes ser mayor de 18 años para registrarte."
-            );
-        }
+        ValidationYears(request.dateBirth);
 
         if (String.IsNullOrEmpty(request.name))
         {
@@ -119,6 +114,26 @@ public class UserController : ControllerBase{
         if (existedUser != null)
         {
             throw new ValidationException("Ya existe un usuario con el nombre " + request.userName);
+        }
+
+    }
+
+    private static void ValidationYears(DateTime? dateBirth)
+    {
+        if (dateBirth.HasValue)
+        {
+            if (dateBirth.Value.Date > DateTime.Today.AddYears(-18))
+            {
+                throw new ValidationException(
+                    "Debes tener al menos 18 años."
+                );
+            }
+            if (dateBirth.Value.Date < DateTime.Today.AddYears(-120))
+            {
+                throw new ValidationException(
+                    "Edad maxima invalida."
+                );
+            }
         }
     }
 
@@ -172,16 +187,7 @@ public class UserController : ControllerBase{
             );
         }
 
-        if (request.dateBirth.HasValue)
-        {
-            if (request.dateBirth.Value.Date >
-                DateTime.Today.AddYears(-18))
-            {
-                throw new ValidationException(
-                    "Debes tener al menos 18 años."
-                );
-            }
-        }
+        ValidationYears(request.dateBirth);
 
         string newUserName = request.userName.Trim();
 
