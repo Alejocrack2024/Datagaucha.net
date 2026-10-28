@@ -1,0 +1,12 @@
+
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "DataGaucha API",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/Datagaucha.API/Datagaucha.API.csproj"
+    }
+  ]
+}
