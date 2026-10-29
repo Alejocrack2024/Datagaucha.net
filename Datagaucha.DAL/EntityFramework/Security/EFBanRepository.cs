@@ -44,6 +44,12 @@ public class EFBanRepository(DatagauchaDbContext dbContext) : IBanRepository
         return true;
     }
 
+    public Task<bool> Update (Ban ban)
+    {
+        this.dbContext.Bans.Update(ban);
+        return Task.FromResult(true);
+    }
+
     public Task<bool> Delete(Ban ban)
     {
         this.dbContext.Bans.Remove(ban);

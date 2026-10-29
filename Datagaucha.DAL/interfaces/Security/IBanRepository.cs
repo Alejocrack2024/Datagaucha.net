@@ -15,5 +15,7 @@ public interface IBanRepository
 
     Task<bool> Create(Ban ban);
 
+    Task<bool> Update(Ban ban);
+
     Task<bool> Delete(Ban ban);
 }

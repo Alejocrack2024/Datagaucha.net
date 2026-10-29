@@ -77,9 +77,36 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
         });
     }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(
+        long id,
+        [FromBody] UpdateBanRequest request)
+    {
+        validationReason(request.reason);
+        Ban? ban = await this.dataBase.BanRepository.GetBanById(id);
+
+        if (ban is null)
+        {
+            throw new BusinessNotFoundException("El baneo no existe");
+        }
+
+        ban.Reason = request.reason.Trim();
+
+        await this.dataBase.BanRepository.Update(ban);
+        await this.dataBase.SaveChangesAsync();
+
+        return Ok(new ResponseDTO<BanDTO>
+        {
+            code = (int)HttpStatusCode.OK,
+            message = "Baneo editado correctamente",
+            success = true,
+            payload = buildDTO(ban)
+        });
+    }
+
     [Authorize]
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(long id)
+    private async Task<IActionResult> Delete(long id)
     {
         Ban? ban = await this.dataBase.BanRepository.GetBanById(id);
 
