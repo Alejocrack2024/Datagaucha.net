@@ -26,6 +26,8 @@ public interface IUnitOfWork : IDisposable
 
     ICommentRepository CommentRepository { get; }
 
+    IReactionRepository ReactionRepository { get; }
+
     IFollowRepository FollowRepository { get; }
 
     IBanRepository BanRepository { get; }

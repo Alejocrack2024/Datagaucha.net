@@ -146,6 +146,33 @@ namespace Datagaucha.DAL.Migrations
                     b.ToTable("Posts");
                 });
 
+            modelBuilder.Entity("Datagaucha.Domain.Post.Reaction", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("PostId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("UserId", "PostId")
+                        .IsUnique();
+
+                    b.ToTable("Reactions");
+                });
+
             modelBuilder.Entity("Datagaucha.Domain.Security.Ban", b =>
                 {
                     b.Property<long>("Id")
@@ -262,6 +289,25 @@ namespace Datagaucha.DAL.Migrations
                         .HasForeignKey("UserId");
 
                     b.Navigation("File");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Datagaucha.Domain.Post.Reaction", b =>
+                {
+                    b.HasOne("Datagaucha.Domain.Post.Post", "Post")
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Datagaucha.Domain.Auth.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
 
                     b.Navigation("User");
                 });

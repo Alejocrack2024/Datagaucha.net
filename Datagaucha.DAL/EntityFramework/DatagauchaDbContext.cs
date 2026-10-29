@@ -3,6 +3,7 @@
 
 using Datagaucha.DAL.EntityFramework;
 using Datagaucha.Domain.Auth;
+using Datagaucha.Domain.Post;
 using Datagaucha.Domain.Social;
 using Microsoft.EntityFrameworkCore;
 namespace Datagaucha.DAL.EntityFramework;
@@ -20,6 +21,10 @@ public class DatagauchaDbContext(DbContextOptions<DatagauchaDbContext> options)
             .HasMany(post => post.Comments)
             .WithOne(comment => comment.Post)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Reaction>()
+            .HasIndex("UserId", "PostId")
+            .IsUnique();
     }
 
     public DbSet<Person> People => Set<Person>();
@@ -29,5 +34,6 @@ public class DatagauchaDbContext(DbContextOptions<DatagauchaDbContext> options)
     public DbSet<Datagaucha.Domain.FileSystem.Image> Images => Set<Datagaucha.Domain.FileSystem.Image>();
     public DbSet<Datagaucha.Domain.Post.Post> Posts => Set<Datagaucha.Domain.Post.Post>();
     public DbSet<Datagaucha.Domain.Post.Comment> Comments => Set<Datagaucha.Domain.Post.Comment>();
+    public DbSet<Reaction> Reactions => Set<Reaction>();
     public DbSet<Datagaucha.Domain.Security.Ban> Bans => Set<Datagaucha.Domain.Security.Ban>();
 }
