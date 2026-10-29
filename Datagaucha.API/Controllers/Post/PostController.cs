@@ -35,10 +35,21 @@ public class PostController(IUnitOfWork unitOfWork, IWebHostEnvironment env) : C
             request.orderDirection,
             request.search
         );
+
+        List<long> postIds = posts.Select(post => post.Id).ToList();
+        Dictionary<long, ReactionType> reactions = await this.dataBase.ReactionRepository
+            .GetReactionsByUserAndPostIds(user.Id, postIds);
+
         List<PostDTO> postDTOs = new List<PostDTO>();
         foreach (Post post in posts)
         {
-            postDTOs.Add(buildDTO(post));
+            ReactionType? myReaction = reactions.TryGetValue(
+                post.Id,
+                out ReactionType reactionType)
+                    ? reactionType
+                    : null;
+
+            postDTOs.Add(buildDTO(post, myReaction));
         }
         return Ok(new ResponseDTO<List<PostDTO>>(){
             code = (int)HttpStatusCode.OK,
@@ -150,7 +161,7 @@ public class PostController(IUnitOfWork unitOfWork, IWebHostEnvironment env) : C
         return await fileStorageService.SaveImageAsync(request.file);
     }
 
-    private static PostDTO buildDTO(Post post)
+    private static PostDTO buildDTO(Post post, ReactionType? myReaction = null)
     {
         return new PostDTO
         {
@@ -158,7 +169,8 @@ public class PostController(IUnitOfWork unitOfWork, IWebHostEnvironment env) : C
             title = post.Title,
             userName = post.GetUserName(),
             content = post.Body,
-            urlImage = post.ImageUrl()
+            urlImage = post.ImageUrl(),
+            myReaction = myReaction
         };
     }
 }

@@ -1,6 +1,8 @@
 /* Copyright (c) 2026 David-irusta
     This code is licensed under the MIT License (see LICENSE file for details) */
 
+using Datagaucha.Domain.Post;
+
 public class PostDTO
 {
     public long id { get; set; }
@@ -8,4 +10,5 @@ public class PostDTO
     public string userName { get; set; } = "";
     public string content { get; set; } = "";
     public string? urlImage { get; set; } = "";
+    public ReactionType? myReaction { get; set; }
 }

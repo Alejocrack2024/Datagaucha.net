@@ -104,6 +104,20 @@ public class EFUnitOfWork(DatagauchaDbContext context) : IUnitOfWork
         }
     }
 
+    private IReactionRepository? reactionRepository;
+
+    public IReactionRepository ReactionRepository
+    {
+        get
+        {
+            if (this.reactionRepository is null)
+            {
+                this.reactionRepository = new EFReactionRepository(_context);
+            }
+            return this.reactionRepository;
+        }
+    }
+
     private IFollowRepository? followRepository;
 
     public IFollowRepository FollowRepository    {
