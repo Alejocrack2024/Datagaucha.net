@@ -302,6 +302,13 @@ public class UserController : ControllerBase{
             throw new InvalidCredentialsException("La clave es un dato obligatorio");
         }
 
+        if (!Regex.IsMatch(userName.Trim(), @"^[a-zA-Z0-9_.]+$"))
+        {
+            throw new ValidationException(
+                "El nombre de usuario solo puede contener letras, números, guion bajo y punto, sin espacios"
+            );
+        }
+
         User? user = await this.dataBase.UserRepository.GetuserByUserName(userName);
         if (user == null)
         {
