@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Net;
+using System.Text.RegularExpressions;
 
 namespace Datagaucha.API.Controllers.Auth;
 
@@ -96,6 +97,11 @@ public class UserController : ControllerBase{
             throw new ValidationException("El nombre de la persona es un dato obligatorio");
         }
 
+        if (!Regex.IsMatch(request.name, @"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"))
+        {
+            throw new ValidationException("El nombre de la persona solo puede contener letras y espacios");
+        }
+
         if (!PasswordValidator.IsValid(request.password))
         {
             throw new ValidationException(
@@ -107,6 +113,11 @@ public class UserController : ControllerBase{
         if (String.IsNullOrEmpty(request.userName))
         {
             throw new ValidationException("El nombre de usuario es un dato obligatorio");
+        }
+
+        if (!Regex.IsMatch(request.userName, @"^[a-zA-Z0-9_.]+$"))
+        {
+            throw new ValidationException("El nombre de usuario solo puede contener letras, números, guion bajo y punto, sin espacios");
         }
 
         User? existedUser = await this.dataBase.UserRepository.GetuserByUserName(request.userName);
@@ -180,10 +191,24 @@ public class UserController : ControllerBase{
             );
         }
 
+        if (!Regex.IsMatch(request.name.Trim(), @"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"))
+        {
+            throw new ValidationException(
+                "El nombre de la persona solo puede contener letras y espacios"
+            );
+        }
+
         if (string.IsNullOrWhiteSpace(request.userName))
         {
             throw new ValidationException(
                 "El nombre de usuario es un dato obligatorio."
+            );
+        }
+
+        if (!Regex.IsMatch(request.userName.Trim(), @"^[a-zA-Z0-9_.]+$"))
+        {
+            throw new ValidationException(
+                "El nombre de usuario solo puede contener letras, números, guion bajo y punto, sin espacios"
             );
         }
 
@@ -291,7 +316,6 @@ public class UserController : ControllerBase{
 
         return user;
     }
-
     private async Task validationBan(User user)
     {
         Ban? ban = await this.dataBase.BanRepository.GetBanByUserId(user.Id);
