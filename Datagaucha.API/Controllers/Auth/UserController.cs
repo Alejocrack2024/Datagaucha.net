@@ -148,7 +148,7 @@ public class UserController : ControllerBase{
         }
     }
 
-    [Authorize]
+    
     [HttpPut("profile")]
     public async Task<IActionResult> UpdateProfile(
         [FromForm] UpdateProfileRequest request)
@@ -205,10 +205,10 @@ public class UserController : ControllerBase{
             );
         }
 
-        if (!Regex.IsMatch(request.userName.Trim(), @"^[a-zA-Z0-9_.]+$"))
+        if (!Regex.IsMatch(request.userName.Trim(), @"^[a-zA-Z0-9_.-?]+$"))
         {
             throw new ValidationException(
-                "El nombre de usuario solo puede contener letras, números, guion bajo y punto, sin espacios"
+                "El nombre de usuario solo puede contener letras, números, guion bajo, medio, signo de pregunta y punto, sin espacios"
             );
         }
 
@@ -302,10 +302,10 @@ public class UserController : ControllerBase{
             throw new InvalidCredentialsException("La clave es un dato obligatorio");
         }
 
-        if (!Regex.IsMatch(userName.Trim(), @"^[a-zA-Z0-9_.]+$"))
+        if (!Regex.IsMatch(userName.Trim(), @"^[a-zA-Z0-9_.?-]+$"))
         {
             throw new ValidationException(
-                "El nombre de usuario solo puede contener letras, números, guion bajo y punto, sin espacios"
+                "El nombre de usuario no puede contener espacios y solo losguientes caracteres: '?-_.'"
             );
         }
 
