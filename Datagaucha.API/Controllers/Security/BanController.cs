@@ -18,7 +18,6 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
 {
     private readonly IUnitOfWork dataBase = unitOfWork;
 
-    [Authorize]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateBanRequest request)
     {
@@ -54,7 +53,6 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
         });
     }
 
-    [Authorize]
     [HttpGet]
     public async Task<IActionResult> GetBans([FromQuery] PagedRequest request)
     {
@@ -104,7 +102,7 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
         });
     }
 
-    [Authorize]
+    
     [HttpDelete("{id}")]
     private async Task<IActionResult> Delete(long id)
     {

@@ -148,7 +148,7 @@ public class UserController : ControllerBase{
         }
     }
 
-    
+    [Authorize]
     [HttpPut("profile")]
     public async Task<IActionResult> UpdateProfile(
         [FromForm] UpdateProfileRequest request)
