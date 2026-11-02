@@ -21,10 +21,8 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateBanRequest request)
     {
-        User currentUser = await getAuthenticatedUser();
         validationReason(request.reason);
         User bannedUser = await getUser(request.userId);
-        validationSelfBan(currentUser, bannedUser);
 
         Ban? existedBan = await this.dataBase.BanRepository.GetBanByUserId(bannedUser.Id);
 
@@ -104,7 +102,7 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
 
     
     [HttpDelete("{id}")]
-    private async Task<IActionResult> Delete(long id)
+    public async Task<IActionResult> Delete(long id)
     {
         Ban? ban = await this.dataBase.BanRepository.GetBanById(id);
 
@@ -133,14 +131,6 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
         }
     }
 
-    private static void validationSelfBan(User currentUser, User bannedUser)
-    {
-        if (currentUser.Id == bannedUser.Id)
-        {
-            throw new ValidationException("No podes banear tu propia cuenta");
-        }
-    }
-
     private static void validationPaged(int currentPage, int pageSize)
     {
         if (currentPage < 1)
@@ -152,12 +142,6 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
         {
             throw new ValidationException("El tamaño de pagina debe ser mayor o igual a 1");
         }
-    }
-
-    private async Task<User> getAuthenticatedUser()
-    {
-        long userId = User.GetUserId();
-        return await getUser(userId);
     }
 
     private async Task<User> getUser(long userId)
