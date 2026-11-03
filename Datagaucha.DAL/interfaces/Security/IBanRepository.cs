@@ -9,6 +9,8 @@ public interface IBanRepository
 {
     Task<List<Ban>> GetBans(int currentPage, int pageSize);
 
+    Task<int> GetTotalBans();
+
     Task<Ban?> GetBanById(long banId);
 
     Task<Ban?> GetBanByUserId(long userId);

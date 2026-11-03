@@ -22,6 +22,11 @@ public class EFBanRepository(DatagauchaDbContext dbContext) : IBanRepository
         return bans;
     }
 
+    public async Task<int> GetTotalBans()
+    {
+        return await this.dbContext.Bans.CountAsync();
+    }
+
     public async Task<Ban?> GetBanById(long banId)
     {
         return await this.dbContext.Bans.FindAsync(banId);
