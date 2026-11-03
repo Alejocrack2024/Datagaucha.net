@@ -27,6 +27,10 @@ public class Ban
 
     public DateTime BannedAt { get => bannedAt; set => bannedAt = value; }
 
+    private DateTime? expiresAt;
+
+    public DateTime? ExpiresAt { get => expiresAt; set => expiresAt = value; }
+
     public string GetUserName()
     {
         if (this.User != null) return this.User.UserName;

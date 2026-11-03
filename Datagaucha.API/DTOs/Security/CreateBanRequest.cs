@@ -5,4 +5,6 @@ public class CreateBanRequest
 {
     public long userId { get; set; }
     public string reason { get; set; } = "";
+    public DateTime bannedAt { get; set; }
+    public DateTime? expiresAt { get; set; }
 }

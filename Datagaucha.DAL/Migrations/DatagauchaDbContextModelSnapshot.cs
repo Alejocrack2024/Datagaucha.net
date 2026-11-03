@@ -184,6 +184,9 @@ namespace Datagaucha.DAL.Migrations
                     b.Property<DateTime>("BannedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<long?>("PersonId")
                         .HasColumnType("bigint");
 

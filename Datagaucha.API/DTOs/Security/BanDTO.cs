@@ -8,4 +8,5 @@ public class BanDTO
     public string userName { get; set; } = "";
     public string reason { get; set; } = "";
     public DateTime bannedAt { get; set; }
+    public DateTime? expiresAt { get; set; }
 }

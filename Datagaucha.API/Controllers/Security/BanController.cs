@@ -36,11 +36,13 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
             User = bannedUser,
             Person = bannedUser,
             Reason = request.reason.Trim(),
-            BannedAt = DateTime.Now
+            BannedAt = request.bannedAt,
+            ExpiresAt = request.expiresAt
         };
 
         await this.dataBase.BanRepository.Create(ban);
         await this.dataBase.SaveChangesAsync();
+        validationDates(request.bannedAt, request.expiresAt);
 
         return Ok(new ResponseDTO<BanDTO>
         {
@@ -87,9 +89,12 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
         }
 
         ban.Reason = request.reason.Trim();
+        ban.BannedAt = request.bannedAt;
+        ban.ExpiresAt = request.expiresAt;
 
         await this.dataBase.BanRepository.Update(ban);
         await this.dataBase.SaveChangesAsync();
+        validationDates(request.bannedAt, request.expiresAt);
 
         return Ok(new ResponseDTO<BanDTO>
         {
@@ -121,6 +126,16 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
             success = true,
             payload = null
         });
+    }
+
+    private static void validationDates(DateTime bannedAt, DateTime? expiresAt)
+    {
+        if (expiresAt.HasValue && expiresAt.Value <= bannedAt)
+        {
+            throw new ValidationException(
+            "La fecha de finalización debe ser posterior a la fecha de inicio"
+            );
+        }
     }
 
     private static void validationReason(string reason)
@@ -164,7 +179,8 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
             userId = ban.User is null ? 0 : ban.User.Id,
             userName = ban.GetUserName(),
             reason = ban.Reason,
-            bannedAt = ban.BannedAt
+            bannedAt = ban.BannedAt,
+            expiresAt = ban.ExpiresAt
         };
     }
 }
