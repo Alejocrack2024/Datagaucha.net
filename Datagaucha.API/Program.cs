@@ -34,19 +34,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("ReactPolicy", policy =>
     {
         policy
-            .WithOrigins("http://localhost:3000")
+            .WithOrigins("http://localhost:3000", "http://127.0.0.1:5501", "http://localhost:5501")
             .AllowAnyHeader()
             .AllowAnyMethod();
-    });
-});
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("FrontendPolicy", policy =>
-    {
-        policy.WithOrigins("http://127.0.0.1:5501")
-        .AllowAnyHeader()
-        .AllowAnyMethod();
     });
 });
 
@@ -128,7 +118,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("ReactPolicy");
 app.UseCors("FrontendPolicy");
 
 app.UseAuthentication();
