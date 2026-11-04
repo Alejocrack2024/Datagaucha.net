@@ -28,4 +28,32 @@ public class EFUserRepository(DatagauchaDbContext dbContext) : IUserRepository
         return this.dbContext.Users
             .FirstOrDefaultAsync(u => u.UserName == userName);
     }
+
+    // Update (faltaba en el archivo anterior)
+    public Task Update(User user)
+    {
+        this.dbContext.Users.Update(user);
+        return Task.CompletedTask;
+    }
+
+    public async Task<List<User>> GetUsers(int currentPage, int pageSize, string search)
+    {
+        IQueryable<User> query = this.dbContext.Users
+            .Include(u => u.Image);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            string s = search.Trim().ToLower();
+
+            query = query.Where(u =>
+                u.UserName.ToLower().Contains(s) ||
+                u.Name.ToLower().Contains(s));
+        }
+
+        return await query
+            .OrderBy(u => u.UserName)
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
 }

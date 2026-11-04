@@ -10,5 +10,10 @@ public interface IUserRepository
     Task<User?> GetuserByUserName(string userName);
 
     Task<bool> Create(User user);
+    
+    Task Update(User user);
+    
     Task<User?> GetuserById(long userId);
+
+    Task<List<User>> GetUsers(int currentPage, int pageSize, string search);
 }

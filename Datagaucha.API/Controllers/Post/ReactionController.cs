@@ -27,7 +27,7 @@ public class ReactionController : ControllerBase
     }
 
     [Authorize]
-    [HttpPut]
+    [HttpPost]
     public async Task<IActionResult> SetReaction([FromBody] ReactionRequest request)
     {
         User user = await getAuthenticatedUser();

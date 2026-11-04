@@ -31,6 +31,7 @@ public class UserController : ControllerBase{
         this.env = env;
         this.generator = generator;
     }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromForm] CreateUserRequest request)
     {
@@ -56,6 +57,39 @@ public class UserController : ControllerBase{
             message = "Usuario guardado correctamente",
             success = true,
             payload = response
+        });
+    }
+
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> GetUsers([FromQuery] GetUsersRequest request)
+    {
+        validationPaged(request.currentPage, request.pageSize);
+
+        List<User> users = await this.dataBase.UserRepository.GetUsers(
+            request.currentPage,
+            request.pageSize,
+            request.search
+        );
+
+        List<UserSummaryDTO> dtos = new List<UserSummaryDTO>();
+        foreach (User user in users)
+        {
+            dtos.Add(new UserSummaryDTO
+            {
+                id = user.Id,
+                userName = user.UserName,
+                urlAvatar = user.GetAvatarurl()
+            });
+        }
+
+        return Ok(new ResponseDTO<List<UserSummaryDTO>>
+        {
+            code = (int)HttpStatusCode.OK,
+            message = "Usuarios obtenidos correctamente",
+            success = true,
+            payload = dtos
         });
     }
 
@@ -126,7 +160,6 @@ public class UserController : ControllerBase{
         {
             throw new ValidationException("Ya existe un usuario con el nombre " + request.userName);
         }
-
     }
 
     private static void ValidationYears(DateTime? dateBirth)
@@ -135,18 +168,29 @@ public class UserController : ControllerBase{
         {
             if (dateBirth.Value.Date > DateTime.Today.AddYears(-18))
             {
-                throw new ValidationException(
-                    "Debes tener al menos 18 años."
-                );
+                throw new ValidationException("Debes tener al menos 18 años.");
             }
             if (dateBirth.Value.Date < DateTime.Today.AddYears(-120))
             {
-                throw new ValidationException(
-                    "Edad maxima invalida."
-                );
+                throw new ValidationException("Edad maxima invalida.");
             }
         }
     }
+
+    // ====== AGREGADO: validación de paginación ======
+    private static void validationPaged(int currentPage, int pageSize)
+    {
+        if (currentPage < 1)
+        {
+            throw new ValidationException("La pagina debe ser mayor o igual a 1");
+        }
+
+        if (pageSize < 1)
+        {
+            throw new ValidationException("El tamaño de pagina debe ser mayor o igual a 1");
+        }
+    }
+    // ====== FIN AGREGADO ======
 
     [Authorize]
     [HttpPut("profile")]
@@ -228,7 +272,7 @@ public class UserController : ControllerBase{
 
         user.Name = request.name.Trim();
         user.UserName = newUserName;
-        
+
         if (request.dateBirth.HasValue)
         {
             user.DateBirth = request.dateBirth.Value;
@@ -264,6 +308,7 @@ public class UserController : ControllerBase{
             payload = response
         });
     }
+
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
