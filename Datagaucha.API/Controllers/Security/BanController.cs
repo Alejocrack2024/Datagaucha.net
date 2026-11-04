@@ -60,17 +60,27 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
 
         List<Ban> bans = await this.dataBase.BanRepository.GetBans(request.currentPage, request.pageSize);
 
+        int totalCount = await this.dataBase.BanRepository.GetTotalBans();
+
+        int totalPages = (int)Math.Ceiling(
+            (double)totalCount / request.pageSize
+    );
+
         List<BanDTO> banDTOs = new List<BanDTO>();
         foreach (Ban ban in bans)
         {
             banDTOs.Add(buildDTO(ban));
         }
 
-        return Ok(new ResponseDTO<List<BanDTO>>
+        return Ok(new PagedResponseDTO<List<BanDTO>>
         {
             code = (int)HttpStatusCode.OK,
             message = "Baneos obtenidos correctamente",
             success = true,
+            currentPage = request.currentPage,
+            pageSize = request.pageSize,
+            totalCount = totalCount,
+            totalPages = totalPages,
             payload = banDTOs
         });
     }
