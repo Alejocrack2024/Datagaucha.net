@@ -2,6 +2,7 @@
     This code is licensed under the MIT License (see LICENSE file for details) */
 
 using Datagaucha.DAL.interfaces;
+using Datagaucha.API.DTOs.Auth;
 using Datagaucha.Domain.Auth;
 using Datagaucha.Domain.Exceptions;
 using Datagaucha.Domain.FileSystem;
@@ -146,6 +147,46 @@ public class UserController : ControllerBase{
                 );
             }
         }
+    }
+
+    [Authorize]
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetProfile()
+    {
+        string? userIdClaim =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value;
+
+        if (!long.TryParse(userIdClaim, out long userId))
+        {
+            throw new InvalidCredentialsException(
+                "No se pudo identificar al usuario autenticado."
+            );
+        }
+
+        User? user = await dataBase.UserRepository.GetuserById(userId);
+
+        if (user == null)
+        {
+            throw new BusinessNotFoundException("El usuario no existe.");
+        }
+
+        UserProfileResponse response = new UserProfileResponse
+        {
+            id = user.Id,
+            name = user.Name,
+            userName = user.UserName,
+            dateBirth = user.DateBirth,
+            avatarUrl = user.GetAvatarurl()
+        };
+
+        return Ok(new ResponseDTO<UserProfileResponse>
+        {
+            code = (int)HttpStatusCode.OK,
+            message = "Perfil obtenido correctamente",
+            success = true,
+            payload = response
+        });
     }
 
     [Authorize]
