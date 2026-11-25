@@ -11,4 +11,6 @@ public class PostDTO
     public string content { get; set; } = "";
     public string? urlImage { get; set; } = "";
     public ReactionType? myReaction { get; set; }
+    public int likeCount { get; set; }      // <-- NUEVO
+    public int dislikeCount { get; set; }   // <-- NUEVO
 }

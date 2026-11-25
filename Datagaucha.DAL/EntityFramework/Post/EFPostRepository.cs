@@ -23,27 +23,24 @@ public class EFPostRepository(DatagauchaDbContext dbContext) : IPostRepository
         string orderDirection,
         string? search)
     {
-        IQueryable<long> followedUserIds = dbContext.Follows
-            .Where(follow => follow.Follower != null && follow.Follower.Id == user.Id)
-            .Select(follow => follow.Following!.Id);
-
         IQueryable<Datagaucha.Domain.Post.Post> posts = dbContext.Posts
-            .Where(post => post.User != null
-                && (post.User.Id == user.Id || followedUserIds.Contains(post.User.Id)));
+            .Include(post => post.User)      // ← AGREGAR (para que traiga el autor)
+            .Include(post => post.File)      // ← AGREGAR (para que traiga la imagen)
+            .Where(post => post.User != null);
+        // ↑ Ahora trae TODOS los posts, sin filtro de "seguidos"
 
         if (!String.IsNullOrEmpty(search))
         {
-            posts = posts.Where(post => post.Body.Contains(search));
+            posts = posts.Where(post =>
+                post.Title.Contains(search) || post.Body.Contains(search));
         }
 
         IQueryable<Datagaucha.Domain.Post.Post> orderedPosts = AddOrder(posts, orderBy, orderDirection);
 
-        List<Datagaucha.Domain.Post.Post> result = await orderedPosts
-                .Skip((currentPage - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-        return result;
+        return await orderedPosts
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 
     public async Task<Domain.Post.Post?> GetPostById(long postId)
