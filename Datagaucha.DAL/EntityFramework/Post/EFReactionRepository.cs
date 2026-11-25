@@ -23,13 +23,36 @@ public class EFReactionRepository(DatagauchaDbContext dbContext) : IReactionRepo
         long userId,
         List<long> postIds)
     {
+        if (postIds == null || postIds.Count == 0)
+            return new Dictionary<long, ReactionType>();
+
         return await this.dbContext.Reactions
             .Where(reaction =>
-                reaction.User.Id == userId
-                && postIds.Contains(reaction.Post.Id))
+                reaction.User != null && reaction.User.Id == userId
+                && reaction.Post != null && postIds.Contains(reaction.Post.Id))
             .ToDictionaryAsync(
                 reaction => reaction.Post.Id,
                 reaction => reaction.Type);
+    }
+
+    // <-- NUEVO MÉTODO PARA CONTAR LIKES Y DISLIKES
+    public async Task<Dictionary<long, (int Likes, int Dislikes)>> GetReactionCountsByPostIds(List<long> postIds)
+    {
+        if (postIds == null || postIds.Count == 0)
+            return new Dictionary<long, (int, int)>();
+
+        var counts = await this.dbContext.Reactions
+            .Where(r => r.Post != null && postIds.Contains(r.Post.Id))
+            .GroupBy(r => r.Post.Id)
+            .Select(g => new
+            {
+                PostId = g.Key,
+                Likes = g.Count(r => r.Type == ReactionType.Like),
+                Dislikes = g.Count(r => r.Type == ReactionType.Dislike)
+            })
+            .ToListAsync();
+
+        return counts.ToDictionary(c => c.PostId, c => (c.Likes, c.Dislikes));
     }
 
     public async Task<bool> Create(Reaction reaction)

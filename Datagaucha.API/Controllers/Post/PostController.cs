@@ -36,21 +36,31 @@ public class PostController(IUnitOfWork unitOfWork, IWebHostEnvironment env) : C
             request.search
         );
 
-        List<long> postIds = posts.Select(post => post.Id).ToList();
-        Dictionary<long, ReactionType> reactions = await this.dataBase.ReactionRepository
-            .GetReactionsByUserAndPostIds(user.Id, postIds);
+    List<long> postIds = posts.Select(post => post.Id).ToList();
+    Dictionary<long, ReactionType> reactions = await this.dataBase.ReactionRepository
+        .GetReactionsByUserAndPostIds(user.Id, postIds);
 
-        List<PostDTO> postDTOs = new List<PostDTO>();
-        foreach (Post post in posts)
-        {
-            ReactionType? myReaction = reactions.TryGetValue(
-                post.Id,
-                out ReactionType reactionType)
-                    ? reactionType
-                    : null;
+    // <-- NUEVO: obtener conteo de reacciones
+    var reactionCounts = await this.dataBase.ReactionRepository
+        .GetReactionCountsByPostIds(postIds);
 
-            postDTOs.Add(buildDTO(post, myReaction));
-        }
+    List<PostDTO> postDTOs = new List<PostDTO>();
+    foreach (Post post in posts)
+    {
+        ReactionType? myReaction = reactions.TryGetValue(
+            post.Id,
+            out ReactionType reactionType)
+                ? reactionType
+                : null;
+
+        var counts = reactionCounts.TryGetValue(post.Id, out var c) ? c : (Likes: 0, Dislikes: 0);
+
+        var dto = buildDTO(post, myReaction);
+        dto.likeCount = counts.Likes;       // <-- NUEVO
+        dto.dislikeCount = counts.Dislikes; // <-- NUEVO
+        postDTOs.Add(dto);
+    }
+
         return Ok(new ResponseDTO<List<PostDTO>>(){
             code = (int)HttpStatusCode.OK,
             message = "Post obtenido",

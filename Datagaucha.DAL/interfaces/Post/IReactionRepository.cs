@@ -13,6 +13,9 @@ public interface IReactionRepository
         long userId,
         List<long> postIds);
 
+    // <-- NUEVO
+    Task<Dictionary<long, (int Likes, int Dislikes)>> GetReactionCountsByPostIds(List<long> postIds);
+
     Task<bool> Create(Reaction reaction);
 
     Task<bool> Delete(Reaction reaction);
