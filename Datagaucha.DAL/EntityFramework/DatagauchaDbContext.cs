@@ -22,6 +22,12 @@ public class DatagauchaDbContext(DbContextOptions<DatagauchaDbContext> options)
             .WithOne(comment => comment.Post)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Cuando se borra un Post, se borran sus Reactions
+        modelBuilder.Entity<Reaction>()
+            .HasOne(r => r.Post)
+            .WithMany()
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<Reaction>()
             .HasIndex("UserId", "PostId")
             .IsUnique();

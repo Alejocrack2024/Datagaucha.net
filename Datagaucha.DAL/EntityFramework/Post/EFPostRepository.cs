@@ -23,11 +23,19 @@ public class EFPostRepository(DatagauchaDbContext dbContext) : IPostRepository
         string orderDirection,
         string? search)
     {
-        IQueryable<Datagaucha.Domain.Post.Post> posts = dbContext.Posts
-            .Include(post => post.User)      // ← AGREGAR (para que traiga el autor)
-            .Include(post => post.File)      // ← AGREGAR (para que traiga la imagen)
+        IQueryable<Domain.Post.Post> posts = dbContext.Posts
+            .Include(post => post.User)
+            .Include(post => post.File)
             .Where(post => post.User != null);
-        // ↑ Ahora trae TODOS los posts, sin filtro de "seguidos"
+
+        long userId = user.Id;
+
+        // Solo mis posts o los de gente que sigo
+        posts = posts.Where(post =>
+            post.User!.Id == userId
+            || dbContext.Follows.Any(f =>
+                f.Follower != null && f.Follower.Id == userId
+                && f.Following != null && f.Following.Id == post.User!.Id));
 
         if (!String.IsNullOrEmpty(search))
         {
@@ -35,7 +43,7 @@ public class EFPostRepository(DatagauchaDbContext dbContext) : IPostRepository
                 post.Title.Contains(search) || post.Body.Contains(search));
         }
 
-        IQueryable<Datagaucha.Domain.Post.Post> orderedPosts = AddOrder(posts, orderBy, orderDirection);
+        IQueryable<Domain.Post.Post> orderedPosts = AddOrder(posts, orderBy, orderDirection);
 
         return await orderedPosts
             .Skip((currentPage - 1) * pageSize)
@@ -46,6 +54,13 @@ public class EFPostRepository(DatagauchaDbContext dbContext) : IPostRepository
     public async Task<Domain.Post.Post?> GetPostById(long postId)
     {
         return await this.dbContext.Posts.FindAsync(postId);
+    }
+
+    public async Task<List<Domain.Post.Post>> GetPostsByUserId(long userId)
+    {
+        return await this.dbContext.Posts
+            .Where(post => post.User != null && post.User.Id == userId)
+            .ToListAsync();
     }
 
     public async Task<bool> Create(Domain.Post.Post post)

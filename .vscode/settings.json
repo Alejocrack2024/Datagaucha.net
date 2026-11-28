@@ -1,5 +1,6 @@
 {
     "csharp-dev-tools.solutionViewer.selectedWorkspaceSolutions": [
         "Datagaucha.sln"
-    ]
+    ],
+    "dotnet.defaultSolution": "Datagaucha.sln"
 }

@@ -5,6 +5,7 @@ using Datagaucha.API.Utils;
 using Datagaucha.DAL.interfaces;
 using Datagaucha.Domain.Auth;
 using Datagaucha.Domain.Exceptions;
+using Datagaucha.Domain.Post;
 using Datagaucha.Domain.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,7 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateBanRequest request)
     {
         validationReason(request.reason);
+        validationDates(request.bannedAt, request.expiresAt);
         User bannedUser = await getUser(request.userId);
 
         Ban? existedBan = await this.dataBase.BanRepository.GetBanByUserId(bannedUser.Id);
@@ -42,12 +44,19 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
 
         await this.dataBase.BanRepository.Create(ban);
         await this.dataBase.SaveChangesAsync();
-        validationDates(request.bannedAt, request.expiresAt);
+
+        // Borrar todos los posts del usuario baneado
+        List<Post> posts = await this.dataBase.PostRepository.GetPostsByUserId(bannedUser.Id);
+        foreach (Post post in posts)
+        {
+            await this.dataBase.PostRepository.Delete(post);
+        }
+        await this.dataBase.SaveChangesAsync();
 
         return Ok(new ResponseDTO<BanDTO>
         {
             code = (int)HttpStatusCode.OK,
-            message = "Usuario baneado correctamente",
+            message = "Usuario baneado correctamente y sus publicaciones fueron eliminadas",
             success = true,
             payload = buildDTO(ban)
         });
@@ -64,7 +73,7 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
 
         int totalPages = (int)Math.Ceiling(
             (double)totalCount / request.pageSize
-    );
+        );
 
         List<BanDTO> banDTOs = new List<BanDTO>();
         foreach (Ban ban in bans)
@@ -91,6 +100,7 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
         [FromBody] UpdateBanRequest request)
     {
         validationReason(request.reason);
+        validationDates(request.bannedAt, request.expiresAt);
         Ban? ban = await this.dataBase.BanRepository.GetBanById(id);
 
         if (ban is null)
@@ -104,7 +114,6 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
 
         await this.dataBase.BanRepository.Update(ban);
         await this.dataBase.SaveChangesAsync();
-        validationDates(request.bannedAt, request.expiresAt);
 
         return Ok(new ResponseDTO<BanDTO>
         {
@@ -115,7 +124,6 @@ public class BanController(IUnitOfWork unitOfWork) : ControllerBase
         });
     }
 
-    
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(long id)
     {
