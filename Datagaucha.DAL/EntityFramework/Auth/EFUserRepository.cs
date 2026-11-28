@@ -4,6 +4,7 @@
 using Datagaucha.DAL.interfaces.Auth;
 using Datagaucha.Domain.Auth;
 using Microsoft.EntityFrameworkCore;
+
 namespace Datagaucha.DAL.EntityFramework.Auth;
 
 public class EFUserRepository(DatagauchaDbContext dbContext) : IUserRepository
@@ -27,5 +28,34 @@ public class EFUserRepository(DatagauchaDbContext dbContext) : IUserRepository
     {
         return this.dbContext.Users
             .FirstOrDefaultAsync(u => u.UserName == userName);
+    }
+
+    public async Task<List<User>> GetUsers(int currentPage, int pageSize, string? search)
+    {
+        DateTime now = DateTime.UtcNow;
+
+        // IDs de usuarios con ban activo:
+        // - ExpiresAt == null  => ban permanente
+        // - ExpiresAt > now    => ban temporal todavía vigente
+        List<long> bannedIds = await this.dbContext.Bans
+            .Where(ban => ban.User != null
+                && (ban.ExpiresAt == null || ban.ExpiresAt > now))
+            .Select(ban => ban.User!.Id)
+            .ToListAsync();
+
+        IQueryable<User> users = this.dbContext.Users
+            .Include(u => u.Image)
+            .Where(u => !bannedIds.Contains(u.Id));
+
+        if (!String.IsNullOrWhiteSpace(search))
+        {
+            users = users.Where(u => u.UserName.Contains(search));
+        }
+
+        return await users
+            .OrderBy(u => u.UserName)
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
     }
 }

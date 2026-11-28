@@ -1,9 +1,6 @@
 /* Copyright (c) 2026 David-irusta
     This code is licensed under the MIT License (see LICENSE file for details) */
 
-/* Copyright (c) 2026 David-irusta
-    This code is licensed under the MIT License (see LICENSE file for details) */
-
 using System.Net;
 using Datagaucha.API.Utils;
 using Datagaucha.DAL.interfaces;
@@ -28,7 +25,23 @@ public class ReactionController : ControllerBase
 
     [Authorize]
     [HttpPut]
-    public async Task<IActionResult> SetReaction([FromBody] ReactionRequest request)
+    [HttpPost]
+    [Consumes("multipart/form-data", "application/x-www-form-urlencoded")]
+    public async Task<IActionResult> SetReactionForm([FromForm] ReactionRequest request)
+    {
+        return await SetReactionInternal(request);
+    }
+
+    [Authorize]
+    [HttpPut]
+    [HttpPost]
+    [Consumes("application/json")]
+    public async Task<IActionResult> SetReactionJson([FromBody] ReactionRequest request)
+    {
+        return await SetReactionInternal(request);
+    }
+
+    private async Task<IActionResult> SetReactionInternal(ReactionRequest request)
     {
         User user = await getAuthenticatedUser();
         Post post = await getPost(request.postId);

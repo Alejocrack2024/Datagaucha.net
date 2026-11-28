@@ -16,6 +16,8 @@ public interface IPostRepository
 
     Task<Domain.Post.Post?> GetPostById(long postId);
 
+    Task<List<Domain.Post.Post>> GetPostsByUserId(long userId);
+
     Task<bool> Create(Domain.Post.Post post);
 
     Task<bool> Delete(Domain.Post.Post post);

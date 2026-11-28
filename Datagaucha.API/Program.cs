@@ -108,6 +108,24 @@ builder.Services.AddScoped<JwtTokenGenerator>();
 
 var app = builder.Build();
 
+// ⬇️ ESTO ES LO QUE FALTA PARA ARREGLAR EL 405 DE LAS PETICIONES OPTIONS ⬇️
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = 200;
+        context.Response.Headers.Add("Access-Control-Allow-Origin", context.Request.Headers["Origin"].ToString());
+        context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+        context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
+        return;
+    }
+    await next();
+});
+// ⬆️ FIN DEL FIX ⬆️
+
+app.UseCors("FrontendPolicy");
+
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -117,8 +135,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-app.UseCors("FrontendPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();

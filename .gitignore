@@ -429,3 +429,4 @@ FodyWeavers.xsd
 *.msp
 
 Datagaucha.API/Storage/Images/
+volcado_*.txt
